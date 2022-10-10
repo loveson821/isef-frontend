@@ -7,7 +7,7 @@ interface PageDialogProps {
   onClose: () => void;
 }
 
-function PageDialog({ isOpen, children, onClose }: PageDialogProps) {
+function PageDialog({ isOpen = false, children, onClose }: PageDialogProps) {
   return (
     <Transition appear show={isOpen} as={Fragment}>
       <Dialog as="div" className="relative z-10" onClose={onClose}>
