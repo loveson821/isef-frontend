@@ -1,15 +1,30 @@
 import { Dialog } from "@headlessui/react";
 import { FormEvent, MouseEvent, useCallback, useRef, useState } from "react";
-import { Document, Page } from "react-pdf";
+import { Document, Page, pdfjs } from "react-pdf";
 import PageDialog from "./components/PageDialog";
-import _ from "lodash";
-import axios from "axios";
+import _, { remove } from "lodash";
+import useAxios from "axios-hooks";
+import { PDFDocument } from "pdf-lib";
 
 function Home() {
   const [uploadIsOpen, setUploadIsOpen] = useState(true);
   const [selectIsOpen, setSelectIsOpen] = useState(false);
   const [files, setFiles] = useState<any>(null);
   const [pdf, setPdf] = useState<any>(null);
+  const [
+    {
+      data: uploadFileToYOLOData,
+      loading: uploadFileToYOLOLoading,
+      error: uploadFileToYOLOError,
+    },
+    uploadFileToYOLO,
+  ] = useAxios(
+    {
+      method: "POST",
+      baseURL: process.env.NEXT_PUBLIC_YOLO_BACKEND_URL,
+    },
+    { manual: true }
+  );
   const fileUploadInput = useRef<HTMLInputElement>(null);
 
   const upload = useCallback(
@@ -27,23 +42,40 @@ function Home() {
     [fileUploadInput]
   );
 
-  const formSubmitHandler = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const pages = _.get(event.target, "pages");
-    let selectedPages = [];
-    for (const [index, page] of pages.entries()) {
-      if (page.checked) selectedPages.push(index);
-    }
-    const reqFormData = new FormData();
-    reqFormData.append("file", files[0]);
-    console.log(reqFormData.get("file"), reqFormData.get("pages"));
-    axios.request({
-      method: "POST",
-      baseURL: process.env.NEXT_PUBLIC_YOLO_BACKEND_URL,
-      url: `/predict?pages=${_.join(selectedPages, ",")}`,
-      data: reqFormData,
-    });
-  };
+  const formSubmitHandler = useCallback(
+    async (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      const pages = _.get(event.target, "pages");
+
+      const fr = new FileReader();
+      fr.onload = async (e) => {
+        if (e.target?.result && typeof e.target.result !== "string") {
+          const pdfDoc = await PDFDocument.load(
+            new Uint8Array(e.target.result)
+          );
+          let removed = 0;
+          if (pages.entries != null)
+            for (const [index, page] of pages.entries()) {
+              if (!page.checked) {
+                pdfDoc.removePage(index - removed);
+                removed++;
+              }
+            }
+          pdfDoc.save().then((fileBytes) => {
+            const file = new File([fileBytes], files[0].name);
+            const reqFormData = new FormData();
+            reqFormData.append("file", file);
+            uploadFileToYOLO({
+              url: `/predict?page_count=${pdfDoc.getPageCount()}`,
+              data: reqFormData,
+            });
+          });
+        }
+      };
+      fr.readAsArrayBuffer(files[0]);
+    },
+    [files, uploadFileToYOLO]
+  );
 
   return (
     <>
@@ -94,8 +126,8 @@ function Home() {
                 onLoadSuccess={(pdf) => setPdf(pdf)}
               >
                 <div className="flex gap-2 flex-wrap">
-                  {pdf?._pdfInfo?.numPages != null &&
-                    _.range(0, pdf._pdfInfo.numPages).map((index) => {
+                  {pdf?.numPages != null &&
+                    _.range(0, pdf.numPages).map((index) => {
                       return (
                         <label className="w-40 relative" key={index}>
                           <Page
@@ -110,6 +142,9 @@ function Home() {
                             className="absolute right-0 bottom-0 rounded-full p-3"
                             name="pages"
                             defaultChecked
+                            {...{
+                              disabled: pdf.numPages === 1,
+                            }}
                           />
                         </label>
                       );
@@ -120,9 +155,14 @@ function Home() {
             <div className="mt-4 flex items-center flex-wrap gap-2">
               <button
                 type="submit"
-                className="ml-auto inline-flex justify-center rounded-md border border-transparent bg-green-100 px-4 py-2 text-sm font-medium text-green-900 hover:bg-green-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2"
+                className={`ml-auto inline-flex justify-center rounded-md border border-transparent bg-green-100 px-4 py-2 text-sm font-medium text-green-900 hover:bg-green-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2${
+                  uploadFileToYOLOLoading ? " opacity-50" : ""
+                }`}
+                {...{
+                  disabled: uploadFileToYOLOLoading,
+                }}
               >
-                確定並上載
+                {uploadFileToYOLOLoading ? "處理中..." : "確定並上載"}
               </button>
             </div>
           </form>
