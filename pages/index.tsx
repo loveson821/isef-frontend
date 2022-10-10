@@ -27,25 +27,23 @@ function Home() {
     [fileUploadInput]
   );
 
-  const formSubmitHandler = useCallback(
-    (event: FormEvent<HTMLFormElement>) => {
-      event.preventDefault();
-      const pages = _.get(event.target, "pages");
-      let selectedPages = [];
-      for (const [index, page] of pages.entries()) {
-        if (page.checked) selectedPages.push(index);
-      }
-      const reqFormData = new FormData();
-      reqFormData.append("file", files[0]);
-      reqFormData.append("pages", _.join(selectedPages, ","));
-      axios.request({
-        baseURL: process.env.YOLO_BACKEND_URL,
-        url: "/predict",
-        data: reqFormData,
-      });
-    },
-    [files]
-  );
+  const formSubmitHandler = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const pages = _.get(event.target, "pages");
+    let selectedPages = [];
+    for (const [index, page] of pages.entries()) {
+      if (page.checked) selectedPages.push(index);
+    }
+    const reqFormData = new FormData();
+    reqFormData.append("file", files[0]);
+    console.log(reqFormData.get("file"), reqFormData.get("pages"));
+    axios.request({
+      method: "POST",
+      baseURL: process.env.NEXT_PUBLIC_YOLO_BACKEND_URL,
+      url: `/predict?pages=${_.join(selectedPages, ",")}`,
+      data: reqFormData,
+    });
+  };
 
   return (
     <>
@@ -109,7 +107,7 @@ function Home() {
                           />
                           <input
                             type="checkbox"
-                            className="absolute right-0 bottom-0"
+                            className="absolute right-0 bottom-0 rounded-full p-3"
                             name="pages"
                             defaultChecked
                           />
