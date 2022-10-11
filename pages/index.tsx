@@ -28,10 +28,13 @@ function Home() {
     },
     { manual: true }
   );
-  const [{}, uploadFileToOCR] = useAxios({
-    method: "POST",
-    baseURL: process.env.NEXT_PUBLIC_BACKEND_URL,
-  });
+  const [{}, uploadFileToOCR] = useAxios(
+    {
+      method: "POST",
+      baseURL: process.env.NEXT_PUBLIC_BACKEND_URL,
+    },
+    { manual: true }
+  );
   const fileUploadInput = useRef<HTMLInputElement>(null);
 
   const upload = useCallback(
