@@ -14,6 +14,7 @@ import useAxios from "axios-hooks";
 import { PDFDocument } from "pdf-lib";
 import YOLOConfirmPage from "../components/YOLOConfirmPage";
 import { Oval } from "react-loader-spinner";
+import ClassifyConfirmPage from "../components/ClassifyConfirmPage";
 
 interface UploadFileToYOLOData {
   crop_url: string;
@@ -395,7 +396,7 @@ function Home() {
         isOpen={currentDialog === "confirm_classes"}
         onClose={() => {}}
       >
-        <Dialog.Panel className="w-full max-w-xl transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
+        <Dialog.Panel className="w-full max-w-3xl transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
           {currentDialog === "confirm_classes" && (
             <>
               <Dialog.Title
@@ -404,6 +405,7 @@ function Home() {
               >
                 確認分類
               </Dialog.Title>
+              <ClassifyConfirmPage data={classifyData} />
               <div className="mt-4 flex items-center flex-wrap gap-2">
                 <button
                   type="submit"
