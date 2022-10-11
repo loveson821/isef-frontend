@@ -45,7 +45,7 @@ function YOLOConfirmPage({ data: uploadFileToYOLOData }: YOLOConfirmPageProps) {
             return (
               <div key={index} className="border-b w-full py-2 px-3">
                 <img
-                  alt="Problem Image"
+                  alt="Image of the problem"
                   key={`${currentPageNumber}_${index}`}
                   src={`${process.env.NEXT_PUBLIC_PREDICT_FILES_URL}/${uploadFileToYOLOData.crop_url}/${currentPageNumber}_${index}.jpg`}
                 />

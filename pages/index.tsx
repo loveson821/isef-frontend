@@ -36,11 +36,21 @@ interface UploadFileToYOLOData {
   };
 }
 
+interface confirmedClassesInterface {
+  base: string;
+  questions: {
+    [id: string]: string;
+  };
+}
+
 function Home() {
   const [currentDialog, setCurrentDialog] = useState("upload");
   const [files, setFiles] = useState<any>(null);
   const [pdf, setPdf] = useState<any>(null);
   const [base, setBase] = useState<string | null>();
+
+  const [confirmedClasses, setConfirmedClasses] =
+    useState<confirmedClassesInterface>({ base: "", questions: {} });
 
   const [
     { data: uploadFileToYOLOData, loading: uploadFileToYOLOLoading },
@@ -405,16 +415,25 @@ function Home() {
               >
                 確認分類
               </Dialog.Title>
-              <ClassifyConfirmPage data={classifyData} />
+              <ClassifyConfirmPage
+                data={classifyData}
+                confirmedClasses={confirmedClasses}
+                setConfirmedClasses={setConfirmedClasses}
+              />
               <div className="mt-4 flex items-center flex-wrap gap-2">
                 <button
                   type="submit"
                   className={`ml-auto inline-flex justify-center items-center rounded-md border border-transparent bg-blue-100 px-4 py-2 text-sm font-medium text-blue-900 hover:bg-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2${
-                    finalUploadLoading ? " opacity-50" : ""
+                    Object.keys(confirmedClasses.questions).length !==
+                      Object.keys(classifyData).length || finalUploadLoading
+                      ? " opacity-50"
+                      : ""
                   }`}
                   onClick={ToConfirmClassifyHandler}
                   {...{
-                    disabled: classifyLoading,
+                    disabled:
+                      Object.keys(confirmedClasses.questions).length !==
+                        Object.keys(classifyData).length || finalUploadLoading,
                   }}
                 >
                   {finalUploadLoading ? (
