@@ -175,7 +175,7 @@ function Home() {
     (event: MouseEvent<HTMLButtonElement>) => {
       setCurrentDialog("confirm_classes");
     },
-    [currentDialog]
+    []
   );
 
   return (

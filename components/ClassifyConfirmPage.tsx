@@ -18,7 +18,10 @@ function ClassifyConfirmPage({ data }: ClassifyConfirmPageProps) {
         />
         <div className="mt-2 flex gap-2 flex-wrap justify-center">
           {Object.values(data)[currentPage][1].map((c) => (
-            <div className="text-center px-4 py-3 border rounded-lg hover:bg-gray-100 cursor-pointer">
+            <div
+              className="text-center px-4 py-3 border rounded-lg hover:bg-gray-100 cursor-pointer"
+              key={c}
+            >
               {c}
             </div>
           ))}
