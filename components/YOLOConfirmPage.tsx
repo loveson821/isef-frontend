@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import ReactPaginate from "react-paginate";
 
@@ -36,16 +37,15 @@ function YOLOConfirmPage({ data: uploadFileToYOLOData }: YOLOConfirmPageProps) {
     }
   }, [uploadFileToYOLOData, currentPageNumber]);
 
-  console.log(currentPredict, uploadFileToYOLOData);
-
   return (
     <div>
       <div className="flex flex-col items-start mb-4">
         {currentPredict.length > 0 ? (
           Object.entries(currentPredict).map(([index, a]) => {
             return (
-              <div className="border-b w-full py-2 px-3">
-                <img
+              <div key={index} className="border-b w-full py-2 px-3">
+                <Image
+                  alt="Problem Image"
                   key={`${currentPageNumber}_${index}`}
                   src={`${process.env.NEXT_PUBLIC_PREDICT_FILES_URL}/${uploadFileToYOLOData.crop_url}/${currentPageNumber}_${index}.jpg`}
                 />

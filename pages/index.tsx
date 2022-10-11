@@ -125,10 +125,10 @@ function Home() {
             as="h3"
             className="text-lg font-medium leading-6 text-gray-900"
           >
-            選擇頁數
+            選擇頁面
           </Dialog.Title>
           <div className="my-2">
-            <p className="text-sm text-gray-500">選擇需要處理的頁數</p>
+            <p className="text-sm text-gray-500">選擇需要處理的頁面</p>
           </div>
           <form onSubmit={formSubmitHandler}>
             {files && (
