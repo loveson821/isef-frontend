@@ -6,6 +6,7 @@ interface YOLOConfirmPageProps {
     crop_url: string;
     orig_url: string;
     pred_url: string;
+    base: string;
     predict: {
       [page: string]: {
         [label: string]: {

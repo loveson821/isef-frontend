@@ -13,28 +13,70 @@ import _ from "lodash";
 import useAxios from "axios-hooks";
 import { PDFDocument } from "pdf-lib";
 import YOLOConfirmPage from "../components/YOLOConfirmPage";
+import { Oval } from "react-loader-spinner";
+
+interface UploadFileToYOLOData {
+  crop_url: string;
+  orig_url: string;
+  pred_url: string;
+  base: string;
+  predict: {
+    [page: string]: {
+      [label: string]: {
+        class: number;
+        confidence: number;
+        name: string;
+        xmax: number;
+        xmin: number;
+        ymax: number;
+        ymin: number;
+      };
+    };
+  };
+}
 
 function Home() {
   const [currentDialog, setCurrentDialog] = useState("upload");
   const [files, setFiles] = useState<any>(null);
   const [pdf, setPdf] = useState<any>(null);
+  const [base, setBase] = useState<string | null>();
+
   const [
     { data: uploadFileToYOLOData, loading: uploadFileToYOLOLoading },
     uploadFileToYOLO,
-  ] = useAxios(
+  ] = useAxios<UploadFileToYOLOData>(
     {
       method: "POST",
       baseURL: process.env.NEXT_PUBLIC_BACKEND_URL,
     },
     { manual: true }
   );
-  const [{}, uploadFileToOCR] = useAxios(
+
+  const [{ data: OCRData, loading: OCRLoading }, OCR] = useAxios(
     {
       method: "POST",
       baseURL: process.env.NEXT_PUBLIC_BACKEND_URL,
     },
     { manual: true }
   );
+
+  const [{ data: classifyData, loading: classifyLoading }, classify] = useAxios(
+    {
+      method: "POST",
+      baseURL: process.env.NEXT_PUBLIC_BACKEND_URL,
+    },
+    { manual: true }
+  );
+
+  const [{ data: finalUploadData, loading: finalUploadLoading }, finalUpload] =
+    useAxios(
+      {
+        method: "POST",
+        baseURL: process.env.NEXT_PUBLIC_BACKEND_URL,
+      },
+      { manual: true }
+    );
+
   const fileUploadInput = useRef<HTMLInputElement>(null);
 
   const upload = useCallback(
@@ -70,14 +112,16 @@ function Home() {
                 removed++;
               }
             }
-          pdfDoc.save().then((fileBytes) => {
+          pdfDoc.save().then(async (fileBytes) => {
             const file = new File([fileBytes], files[0].name);
             const reqFormData = new FormData();
             reqFormData.append("file", file);
-            uploadFileToYOLO({
+            const res = await uploadFileToYOLO({
               url: `/predict?page_count=${pdfDoc.getPageCount()}`,
               data: reqFormData,
             });
+            setBase(res.data.base);
+            if (res != null) setCurrentDialog("confirm_yolo");
           });
         }
       };
@@ -86,11 +130,52 @@ function Home() {
     [files, uploadFileToYOLO]
   );
 
-  useEffect(() => {
-    if (uploadFileToYOLOData != null) {
-      setCurrentDialog("confirm_yolo");
-    }
-  }, [uploadFileToYOLOData]);
+  const OCRReqHandler = useCallback(
+    (event: MouseEvent<HTMLButtonElement>) => {
+      event.preventDefault();
+      if (uploadFileToYOLOData != null) {
+        let pages: any = {};
+        for (let [page, problems] of Object.entries(
+          uploadFileToYOLOData.predict
+        )) {
+          const filtered = _.filter(
+            problems,
+            ({ name }) => name === "question"
+          );
+          pages[page] = Object.keys(filtered);
+        }
+        setCurrentDialog("ocr_processing");
+        OCR({
+          url: "ocr",
+          data: {
+            base: base,
+            pages: pages,
+          },
+        });
+      }
+    },
+    [uploadFileToYOLOData, base, OCR]
+  );
+
+  const ClassifyReqHandler = useCallback(
+    (event: MouseEvent<HTMLButtonElement>) => {
+      event.preventDefault();
+      if (OCRData != null) {
+        setCurrentDialog("classifier_processing");
+        classify({
+          url: `classify?base=${base}`,
+        });
+      }
+    },
+    [OCRData, classify, base]
+  );
+
+  const ToConfirmClassifyHandler = useCallback(
+    (event: MouseEvent<HTMLButtonElement>) => {
+      setCurrentDialog("confirm_classes");
+    },
+    [currentDialog]
+  );
 
   return (
     <>
@@ -185,7 +270,7 @@ function Home() {
       </PageDialog>
       <PageDialog isOpen={currentDialog === "confirm_yolo"} onClose={() => {}}>
         <Dialog.Panel className="w-full max-w-4xl transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
-          {currentDialog === "confirm_yolo" && (
+          {uploadFileToYOLOData != null && (
             <>
               <Dialog.Title
                 as="h3"
@@ -200,14 +285,150 @@ function Home() {
               <div className="mt-4 flex items-center flex-wrap gap-2">
                 <button
                   type="submit"
-                  className={`ml-auto inline-flex justify-center rounded-md border border-transparent bg-green-100 px-4 py-2 text-sm font-medium text-green-900 hover:bg-green-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2${
-                    uploadFileToYOLOLoading ? " opacity-50" : ""
+                  className="ml-auto inline-flex justify-center rounded-md border border-transparent bg-green-100 px-4 py-2 text-sm font-medium text-green-900 hover:bg-green-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2"
+                  onClick={OCRReqHandler}
+                >
+                  確定裁切
+                </button>
+              </div>
+            </>
+          )}
+        </Dialog.Panel>
+      </PageDialog>
+      <PageDialog
+        isOpen={currentDialog === "ocr_processing"}
+        onClose={() => {}}
+      >
+        <Dialog.Panel className="w-full max-w-xl transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
+          {currentDialog === "ocr_processing" && (
+            <>
+              <Dialog.Title
+                as="h3"
+                className="text-lg font-medium leading-6 text-gray-900"
+              >
+                檢測文字
+              </Dialog.Title>
+              <div className="my-2">
+                <p className="text-sm text-gray-500">
+                  使用 OCR 技術識別圖中文字
+                </p>
+              </div>
+              <div className="mt-4 flex items-center flex-wrap gap-2">
+                <button
+                  type="submit"
+                  className={`ml-auto inline-flex justify-center items-center rounded-md border border-transparent bg-blue-100 px-4 py-2 text-sm font-medium text-blue-900 hover:bg-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2${
+                    OCRLoading ? " opacity-50" : ""
                   }`}
+                  onClick={ClassifyReqHandler}
                   {...{
-                    disabled: uploadFileToYOLOLoading,
+                    disabled: OCRLoading,
                   }}
                 >
-                  {uploadFileToYOLOLoading ? "處理中..." : "確定裁切"}
+                  {OCRLoading ? (
+                    <>
+                      <Oval
+                        height={16}
+                        width={16}
+                        strokeWidth={8}
+                        color={"#ffffff"}
+                        secondaryColor={"#aaaaaa"}
+                      />
+                      處理中...
+                    </>
+                  ) : (
+                    "下一步"
+                  )}
+                </button>
+              </div>
+            </>
+          )}
+        </Dialog.Panel>
+      </PageDialog>
+      <PageDialog
+        isOpen={currentDialog === "classifier_processing"}
+        onClose={() => {}}
+      >
+        <Dialog.Panel className="w-full max-w-xl transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
+          {currentDialog === "classifier_processing" && (
+            <>
+              <Dialog.Title
+                as="h3"
+                className="text-lg font-medium leading-6 text-gray-900"
+              >
+                題目分類
+              </Dialog.Title>
+              <div className="my-2">
+                <p className="text-sm text-gray-500">使用 AI 分類題目</p>
+              </div>
+              <div className="mt-4 flex items-center flex-wrap gap-2">
+                <button
+                  type="submit"
+                  className={`ml-auto inline-flex justify-center items-center rounded-md border border-transparent bg-blue-100 px-4 py-2 text-sm font-medium text-blue-900 hover:bg-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2${
+                    classifyLoading ? " opacity-50" : ""
+                  }`}
+                  onClick={ToConfirmClassifyHandler}
+                  {...{
+                    disabled: classifyLoading,
+                  }}
+                >
+                  {classifyLoading ? (
+                    <>
+                      <Oval
+                        height={16}
+                        width={16}
+                        strokeWidth={8}
+                        color={"#ffffff"}
+                        secondaryColor={"#aaaaaa"}
+                      />
+                      處理中...
+                    </>
+                  ) : (
+                    "下一步"
+                  )}
+                </button>
+              </div>
+            </>
+          )}
+        </Dialog.Panel>
+      </PageDialog>
+      <PageDialog
+        isOpen={currentDialog === "confirm_classes"}
+        onClose={() => {}}
+      >
+        <Dialog.Panel className="w-full max-w-xl transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
+          {currentDialog === "confirm_classes" && (
+            <>
+              <Dialog.Title
+                as="h3"
+                className="text-lg font-medium leading-6 text-gray-900"
+              >
+                確認分類
+              </Dialog.Title>
+              <div className="mt-4 flex items-center flex-wrap gap-2">
+                <button
+                  type="submit"
+                  className={`ml-auto inline-flex justify-center items-center rounded-md border border-transparent bg-blue-100 px-4 py-2 text-sm font-medium text-blue-900 hover:bg-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2${
+                    finalUploadLoading ? " opacity-50" : ""
+                  }`}
+                  onClick={ToConfirmClassifyHandler}
+                  {...{
+                    disabled: classifyLoading,
+                  }}
+                >
+                  {finalUploadLoading ? (
+                    <>
+                      <Oval
+                        height={16}
+                        width={16}
+                        strokeWidth={8}
+                        color={"#ffffff"}
+                        secondaryColor={"#aaaaaa"}
+                      />
+                      提交中...
+                    </>
+                  ) : (
+                    "完成"
+                  )}
                 </button>
               </div>
             </>
