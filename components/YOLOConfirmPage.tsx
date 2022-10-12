@@ -39,7 +39,7 @@ function YOLOConfirmPage({ data: uploadFileToYOLOData }: YOLOConfirmPageProps) {
 
   useEffect(() => {
     updatePredict();
-  }, [uploadFileToYOLOData]);
+  }, [uploadFileToYOLOData, updatePredict]);
 
   return (
     <div>

@@ -77,7 +77,7 @@ function ClassifyConfirmPage({
       setSelectedOption(currentConfirmedQuestion);
     }
     setCurrentKey(Object.keys(data)[currentPage]);
-  }, [currentPage, data]);
+  }, [currentPage, classList, data, confirmedClasses]);
 
   useEffect(() => {
     setSelectedOption(classList[0]);

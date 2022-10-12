@@ -200,7 +200,7 @@ function Home() {
         });
       }
     },
-    [OCRData, classify, base]
+    [OCRData, classify, getClassList, base]
   );
 
   const ConfirmClassifyHandler = useCallback(
