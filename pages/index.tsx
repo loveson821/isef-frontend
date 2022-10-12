@@ -88,6 +88,14 @@ function Home() {
       { manual: true }
     );
 
+  const [
+    { data: getClassListData, loading: getClassListLoading },
+    getClassList,
+  ] = useAxios<string[]>(
+    { method: "GET", baseURL: process.env.NEXT_PUBLIC_BACKEND_URL },
+    { manual: true }
+  );
+
   const fileUploadInput = useRef<HTMLInputElement>(null);
 
   const upload = useCallback(
@@ -141,6 +149,17 @@ function Home() {
     [files, uploadFileToYOLO]
   );
 
+  useEffect(() => {
+    if (base != null && base !== "") {
+      setConfirmedClasses((prevState) => {
+        return {
+          base: base,
+          questions: prevState.questions,
+        };
+      });
+    }
+  }, [base]);
+
   const OCRReqHandler = useCallback(
     (event: MouseEvent<HTMLButtonElement>) => {
       event.preventDefault();
@@ -176,16 +195,20 @@ function Home() {
         classify({
           url: `classify?base=${base}`,
         });
+        getClassList({
+          url: `label`,
+        });
       }
     },
     [OCRData, classify, base]
   );
 
-  const ToConfirmClassifyHandler = useCallback(
-    (event: MouseEvent<HTMLButtonElement>) => {
-      setCurrentDialog("confirm_classes");
+  const ConfirmClassifyHandler = useCallback(
+    async (event: MouseEvent<HTMLButtonElement>) => {
+      await finalUpload({ url: "confirm", data: confirmedClasses });
+      setCurrentDialog("done");
     },
-    []
+    [finalUpload, confirmedClasses]
   );
 
   return (
@@ -377,7 +400,7 @@ function Home() {
                   className={`ml-auto inline-flex justify-center items-center rounded-md border border-transparent bg-blue-100 px-4 py-2 text-sm font-medium text-blue-900 hover:bg-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2${
                     classifyLoading ? " opacity-50" : ""
                   }`}
-                  onClick={ToConfirmClassifyHandler}
+                  onClick={() => setCurrentDialog("confirm_classes")}
                   {...{
                     disabled: classifyLoading,
                   }}
@@ -406,7 +429,7 @@ function Home() {
         isOpen={currentDialog === "confirm_classes"}
         onClose={() => {}}
       >
-        <Dialog.Panel className="w-full max-w-3xl transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
+        <Dialog.Panel className="w-full max-w-3xl transform overflow rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
           {currentDialog === "confirm_classes" && (
             <>
               <Dialog.Title
@@ -419,17 +442,18 @@ function Home() {
                 data={classifyData}
                 confirmedClasses={confirmedClasses}
                 setConfirmedClasses={setConfirmedClasses}
+                classList={getClassListData}
               />
               <div className="mt-4 flex items-center flex-wrap gap-2">
                 <button
                   type="submit"
-                  className={`ml-auto inline-flex justify-center items-center rounded-md border border-transparent bg-blue-100 px-4 py-2 text-sm font-medium text-blue-900 hover:bg-blue-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2${
+                  className={`ml-auto inline-flex justify-center items-center rounded-md border border-transparent bg-green-100 px-4 py-2 text-sm font-medium text-green-900 hover:bg-green-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2${
                     Object.keys(confirmedClasses.questions).length !==
                       Object.keys(classifyData).length || finalUploadLoading
                       ? " opacity-50"
                       : ""
                   }`}
-                  onClick={ToConfirmClassifyHandler}
+                  onClick={ConfirmClassifyHandler}
                   {...{
                     disabled:
                       Object.keys(confirmedClasses.questions).length !==
@@ -454,6 +478,21 @@ function Home() {
               </div>
             </>
           )}
+        </Dialog.Panel>
+      </PageDialog>
+      <PageDialog
+        isOpen={currentDialog === "done"}
+        onClose={() => {
+          setCurrentDialog("none");
+        }}
+      >
+        <Dialog.Panel>
+          <Dialog.Title
+            as="h3"
+            className="text-2lg font-medium leading-6 text-gray-900"
+          >
+            完成
+          </Dialog.Title>
         </Dialog.Panel>
       </PageDialog>
     </>

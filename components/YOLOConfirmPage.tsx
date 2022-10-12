@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import ReactPaginate from "react-paginate";
 
 interface YOLOConfirmPageProps {
@@ -24,18 +24,22 @@ interface YOLOConfirmPageProps {
 }
 
 function YOLOConfirmPage({ data: uploadFileToYOLOData }: YOLOConfirmPageProps) {
-  const [currentPageNumber, setCurrentPageNumber] = useState(0);
+  const currentPageNumber = useRef(0);
   const [currentPredict, setCurrentPredict] = useState<any[]>([]);
 
-  useEffect(() => {
+  const updatePredict = useCallback(() => {
     if (uploadFileToYOLOData) {
       setCurrentPredict(
-        Object.values(uploadFileToYOLOData.predict[currentPageNumber]).filter(
-          (label) => label.name === "question"
-        )
+        Object.values(
+          uploadFileToYOLOData.predict[currentPageNumber.current]
+        ).filter((label) => label.name === "question")
       );
     }
-  }, [uploadFileToYOLOData, currentPageNumber]);
+  }, [uploadFileToYOLOData]);
+
+  useEffect(() => {
+    updatePredict();
+  }, [uploadFileToYOLOData]);
 
   return (
     <div>
@@ -47,7 +51,7 @@ function YOLOConfirmPage({ data: uploadFileToYOLOData }: YOLOConfirmPageProps) {
                 <img
                   alt="Image of the problem"
                   key={`${currentPageNumber}_${index}`}
-                  src={`${process.env.NEXT_PUBLIC_PREDICT_FILES_URL}/${uploadFileToYOLOData.crop_url}/${currentPageNumber}_${index}.jpg`}
+                  src={`${process.env.NEXT_PUBLIC_PREDICT_FILES_URL}/${uploadFileToYOLOData.crop_url}/${currentPageNumber.current}_${index}.jpg`}
                 />
               </div>
             );
@@ -56,7 +60,7 @@ function YOLOConfirmPage({ data: uploadFileToYOLOData }: YOLOConfirmPageProps) {
           <div className="self-center">沒有偵測到任何題目</div>
         )}
         <div className="font-bold mt-2 self-center">
-          第 {currentPageNumber + 1} 頁
+          第 {currentPageNumber.current + 1} 頁
         </div>
       </div>
       <ReactPaginate
@@ -66,7 +70,8 @@ function YOLOConfirmPage({ data: uploadFileToYOLOData }: YOLOConfirmPageProps) {
         previousLinkClassName="py-2 px-3 hover:bg-gray-100 rounded"
         pageCount={Object.keys(uploadFileToYOLOData.predict).length}
         onPageChange={(event) => {
-          setCurrentPageNumber(event.selected);
+          currentPageNumber.current = event.selected;
+          updatePredict();
         }}
         pageRangeDisplayed={2}
         renderOnZeroPageCount={() => null}
