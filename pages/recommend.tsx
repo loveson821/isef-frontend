@@ -13,6 +13,10 @@ function Recommend() {
   const [limit, setLimit] = useState<number>(5);
   const [query, setQuery] = useState("");
 
+  useEffect(() => {
+    router.push("/upload");
+  }, []);
+
   const [
     { data: getRecommendationData, loading: getRecommendationLoading },
     getRecommendation,

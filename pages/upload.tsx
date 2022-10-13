@@ -218,7 +218,7 @@ function Upload() {
       <PageDialog
         isOpen={currentDialog === "upload"}
         onClose={() => {
-          router.push("/");
+          //router.push("/");
         }}
       >
         <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
@@ -251,7 +251,7 @@ function Upload() {
       <PageDialog
         isOpen={currentDialog === "select"}
         onClose={() => {
-          router.push("/");
+          //router.push("/");
         }}
       >
         <Dialog.Panel className="w-full max-w-4xl transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
@@ -317,7 +317,7 @@ function Upload() {
       <PageDialog
         isOpen={currentDialog === "confirm_yolo"}
         onClose={() => {
-          router.push("/");
+          //router.push("/");
         }}
       >
         <Dialog.Panel className="w-full max-w-4xl transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
@@ -398,7 +398,7 @@ function Upload() {
       <PageDialog
         isOpen={currentDialog === "classifier_processing"}
         onClose={() => {
-          router.push("/");
+          //router.push("/");
         }}
       >
         <Dialog.Panel className="w-full max-w-xl transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
@@ -447,7 +447,7 @@ function Upload() {
       <PageDialog
         isOpen={currentDialog === "confirm_classes"}
         onClose={() => {
-          router.push("/");
+          //router.push("/");
         }}
       >
         <Dialog.Panel className="w-full max-w-3xl transform overflow rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
@@ -504,8 +504,8 @@ function Upload() {
       <PageDialog
         isOpen={currentDialog === "done"}
         onClose={() => {
-          setCurrentDialog("none");
-          router.push("/");
+          //setCurrentDialog("none");
+          //router.push("/");
         }}
       >
         <Dialog.Panel className="w-full max-w-xl transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">

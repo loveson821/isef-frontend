@@ -1,6 +1,12 @@
 import Link from "next/link";
+import { useEffect } from "react";
+import { useRouter } from "next/router";
 
 function Home() {
+  const router = useRouter();
+  useEffect(() => {
+    router.push("/upload");
+  }, []);
   return (
     <div className="flex items-center justify-center h-screen gap-4">
       <Link href={"/upload"}>
@@ -8,11 +14,11 @@ function Home() {
           上載並分析題目
         </a>
       </Link>
-      <Link href={"/recommend"}>
+      {/** <Link href={"/recommend"}>
         <a className="px-5 py-3 bg-blue-100 rounded shadow hover:bg-blue-200 text-blue-900 text-lg font-bold">
           獲取分類題目
         </a>
-      </Link>
+      </Link> **/}
     </div>
   );
 }
